@@ -1,7 +1,5 @@
 databases:
   - name: hireshield-db
-    databaseName: hireshield
-    user: postgres
     plan: free
 
 services:
