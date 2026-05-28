@@ -1,0 +1,47 @@
+databases:
+  - name: hireshield-db
+    databaseName: hireshield
+    user: postgres
+    plan: free
+
+services:
+  # Python FastAPI AI Microservice (Docker-based)
+  - type: web
+    name: hireshield-ai-service
+    env: docker
+    plan: free
+    rootDir: ai-service
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    envVars:
+      - key: PORT
+        value: 8000
+
+  # Node Express Backend
+  - type: web
+    name: hireshield-backend
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 4000
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hireshield-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false # Set to Vercel frontend URL after deploying frontend
+      - key: AI_SERVICE_URL
+        fromService:
+          type: web
+          name: hireshield-ai-service
+          property: host
+      - key: CLAUDE_API_KEY
+        sync: false # Manually enter your sk-ant-... API key in the Render dashboard
