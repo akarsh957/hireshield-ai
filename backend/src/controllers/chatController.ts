@@ -1,5 +1,6 @@
 import { Response } from 'express'
 import Anthropic from '@anthropic-ai/sdk'
+import axios from 'axios'
 import { v4 as uuidv4 } from 'uuid'
 import { AuthRequest } from '../middleware/authMiddleware'
 import { query } from '../config/database'
@@ -16,16 +17,57 @@ const FALLBACKS = [
 ]
 let fbIdx = 0
 
+const tryGemini = async (message: string, history: any[], key: string | undefined): Promise<string> => {
+  if (!key) return FALLBACKS[fbIdx++ % FALLBACKS.length]
+  try {
+    const contents = history.map((h: any) => ({
+      role: h.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: h.content }]
+    }))
+    contents.push({
+      role: 'user',
+      parts: [{ text: message }]
+    })
+    
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`
+    const response = await axios.post(url, {
+      contents,
+      systemInstruction: {
+        parts: [{ text: SYSTEM }]
+      },
+      generationConfig: {
+        maxOutputTokens: 1000,
+        temperature: 0.7
+      }
+    }, { timeout: 8000 })
+    
+    return response.data?.candidates?.[0]?.content?.parts?.[0]?.text || FALLBACKS[fbIdx++ % FALLBACKS.length]
+  } catch (err) {
+    console.error('Gemini API Error:', err)
+    return FALLBACKS[fbIdx++ % FALLBACKS.length]
+  }
+}
+
 export const chat = async (req: AuthRequest, res: Response): Promise<void> => {
   const { message, history = [], session_id } = req.body
   if (!message) { res.status(400).json({ error: 'message is required' }); return }
   const sid = session_id || uuidv4()
   let reply = ''
-  try {
-    const messages = [...(history as any[]).slice(-8), { role: 'user' as const, content: message }]
-    const response = await client.messages.create({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: SYSTEM, messages })
-    reply = response.content[0].type === 'text' ? response.content[0].text : ''
-  } catch {
+  
+  const geminiKey = process.env.GEMINI_API_KEY
+  const claudeKey = process.env.CLAUDE_API_KEY
+
+  if (claudeKey) {
+    try {
+      const messages = [...(history as any[]).slice(-8), { role: 'user' as const, content: message }]
+      const response = await client.messages.create({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: SYSTEM, messages })
+      reply = response.content[0].type === 'text' ? response.content[0].text : ''
+    } catch {
+      reply = await tryGemini(message, history, geminiKey)
+    }
+  } else if (geminiKey) {
+    reply = await tryGemini(message, history, geminiKey)
+  } else {
     reply = FALLBACKS[fbIdx++ % FALLBACKS.length]
   }
   try {

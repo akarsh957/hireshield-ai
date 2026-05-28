@@ -43,3 +43,5 @@ services:
           property: host
       - key: CLAUDE_API_KEY
         sync: false # Manually enter your sk-ant-... API key in the Render dashboard
+      - key: GEMINI_API_KEY
+        sync: false # Manually enter your Google Gemini API key (free from AI Studio)
