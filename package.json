@@ -1,0 +1,24 @@
+{
+  "name": "hireshield-ai",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:web": "turbo run dev --filter=@hireshield/web",
+    "dev:api": "turbo run dev --filter=@hireshield/api",
+    "dev:ai": "uvicorn src.main:app --app-dir apps/ai-service --host 127.0.0.1 --port 8000 --reload",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean && rimraf node_modules",
+    "db:generate": "pnpm --filter @hireshield/database generate",
+    "db:push": "pnpm --filter @hireshield/database push",
+    "db:migrate": "pnpm --filter @hireshield/database migrate",
+    "db:studio": "pnpm --filter @hireshield/database studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.3",
+    "typescript": "^5.6.3",
+    "rimraf": "^6.0.1"
+  }
+}

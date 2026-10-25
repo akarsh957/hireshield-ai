@@ -1,0 +1,176 @@
+// =============================================================================
+// HireShield AI — Production Database Schema
+// Optimized for: Neon Serverless Postgres (Zero-Cost / Dual Connection Pooler)
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Pooled PgBouncer connection (port 6543 / -pooler)
+  directUrl = env("DIRECT_URL")   // Direct unpooled connection (port 5432) for DDL migrations
+}
+
+// -----------------------------------------------------------------------------
+// ENUMS
+// -----------------------------------------------------------------------------
+
+enum UserRole {
+  ADMIN
+  STANDARD
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum ScanType {
+  JOB_POSTING
+  RECRUITER_EMAIL
+  COMPANY_DOMAIN
+}
+
+enum ScanVerdict {
+  LEGITIMATE       // 0 - 25 Risk Score
+  SUSPICIOUS       // 26 - 65 Risk Score
+  CONFIRMED_SCAM   // 66 - 100 Risk Score
+  INCONCLUSIVE     // Low confidence / insufficient data
+}
+
+enum AnalysisEngine {
+  GEMINI_FLASH_PRIMARY // Google Gemini 1.5 Flash (via free API tier)
+  TRANSFORMERS_LOCAL   // Python FastAPI local NLP model
+  HEURISTIC_FALLBACK   // Node.js Regex/Rule fallback on AI service timeout
+}
+
+enum LogCategory {
+  API_USAGE
+  FALLBACK_EVENT
+  AUTH_AUDIT
+  RATE_LIMIT_TRIGGER
+}
+
+enum LogSeverity {
+  INFO
+  WARN
+  ERROR
+}
+
+// -----------------------------------------------------------------------------
+// USER MODEL (RBAC & Free-Tier Quota Tracking)
+// -----------------------------------------------------------------------------
+
+model User {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String        @unique @db.VarChar(255)
+  passwordHash    String?       @map("password_hash") @db.VarChar(255)
+  fullName        String        @map("full_name") @db.VarChar(120)
+  
+  // Role-Based Access Control
+  role            UserRole      @default(STANDARD)
+  status          AccountStatus @default(ACTIVE)
+  
+  // Free-Tier Protection / Quotas
+  dailyScanQuota  Int           @default(30) @map("daily_scan_quota")
+  scansUsedToday  Int           @default(0) @map("scans_used_today")
+  lastQuotaReset  DateTime      @default(now()) @map("last_quota_reset") @db.Timestamptz
+
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  scanReports     ScanReport[]
+  systemLogs      SystemLog[]
+
+  @@index([role, status], name: "idx_users_role_status")
+  @@map("users")
+}
+
+// -----------------------------------------------------------------------------
+// SCAN REPORT MODEL (Threat Metrics & Flagged Data)
+// -----------------------------------------------------------------------------
+
+model ScanReport {
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String?        @map("user_id") @db.Uuid // Nullable to permit anonymous community demo scans
+  scanType           ScanType       @map("scan_type")
+  engineUsed         AnalysisEngine @default(GEMINI_FLASH_PRIMARY) @map("engine_used")
+  
+  // Target Information
+  targetSubject      String?        @map("target_subject") @db.VarChar(255) // Job Title, Email Subject, or Domain
+  targetCompany      String?        @map("target_company") @db.VarChar(255) // Target organization name
+  
+  // Scoring & Threat Verdict
+  verdict            ScanVerdict
+  riskScore          Decimal        @map("risk_score") @db.Decimal(5, 2)    // Range: 0.00 to 100.00
+  confidenceScore    Decimal        @map("confidence_score") @db.Decimal(5, 2) // Range: 0.00 to 100.00
+  
+  // Flagged Keywords & Indicators
+  // Stored as JSONB: [{"keyword": "telegram interview", "severity": "HIGH", "category": "IMPERSONATION"}]
+  flaggedKeywords    Json           @default("[]") @map("flagged_keywords") @db.JsonB
+  
+  // Detailed Signal Breakdown (e.g. {"wireTransferMentioned": true, "domainAgeDays": 4})
+  analysisSignals    Json           @default("{}") @map("analysis_signals") @db.JsonB
+  
+  aiSummary          String?        @map("ai_summary") @db.Text
+  recommendedAction  String?        @map("recommended_action") @db.Text
+  
+  // Performance & Telemetry
+  processingTimeMs   Int            @map("processing_time_ms")
+  clientIpHash       String?        @map("client_ip_hash") @db.VarChar(64) // For abuse mitigation on free tier
+
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user               User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // ---------------------------------------------------------------------------
+  // Performance Indexes for Recharts Analytics & Time-Series Aggregations
+  // ---------------------------------------------------------------------------
+  @@index([createdAt(sort: Desc), verdict], name: "idx_scans_created_verdict")
+  @@index([createdAt(sort: Desc), riskScore(sort: Desc)], name: "idx_scans_created_risk")
+  @@index([userId, createdAt(sort: Desc)], name: "idx_scans_user_history")
+  @@index([scanType, createdAt(sort: Desc)], name: "idx_scans_type_created")
+  @@map("scan_reports")
+}
+
+// -----------------------------------------------------------------------------
+// SYSTEM LOG MODEL (Fallback Telemetry & API Usage Audits)
+// -----------------------------------------------------------------------------
+
+model SystemLog {
+  id              BigInt       @id @default(autoincrement())
+  userId          String?      @map("user_id") @db.Uuid
+  category        LogCategory
+  severity        LogSeverity  @default(INFO)
+  
+  // Endpoint & Service Diagnostics
+  serviceName     String       @default("api-backend") @map("service_name") @db.VarChar(50)
+  endpoint        String?      @db.VarChar(255)
+  httpMethod      String?      @map("http_method") @db.VarChar(10)
+  statusCode      Int?         @map("status_code")
+  latencyMs       Int?         @map("latency_ms")
+  
+  // Fallback Tracing: Records triggers when AI microservice sleeps or times out
+  eventMessage    String       @map("event_message") @db.Text
+  fallbackReason  String?      @map("fallback_reason") @db.Text
+  
+  // Metadata payload for request traces or error stacks
+  metadata        Json?        @default("{}") @db.JsonB
+
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user            User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // ---------------------------------------------------------------------------
+  // Lookup Optimization
+  // ---------------------------------------------------------------------------
+  @@index([category, severity, createdAt(sort: Desc)], name: "idx_logs_cat_sev_created")
+  @@index([createdAt(sort: Desc)], name: "idx_logs_created_desc")
+  @@map("system_logs")
+}

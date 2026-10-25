@@ -1,0 +1,31 @@
+# Dependencies & Builds
+node_modules/
+.pnpm-store/
+.next/
+dist/
+build/
+.turbo/
+
+# Environment and Secrets (CRITICAL)
+.env
+.env.*
+*.env
+**/.env
+!.env.example
+
+# Python virtual environment & cache
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+
+# OS and Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
