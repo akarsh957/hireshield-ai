@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Light Mode ("Warm Alabaster & Ink") */
+  --bg-canvas: #F7F6F2;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #EAE8E1;
+  --border-subtle: #E5E4DF;
+  --text-primary: #141413;
+  --text-muted: #78756E;
+  --accent-primary: #141413;
+  --accent-fg: #F7F6F2;
+
+  --scam-accent: #D94E34;
+  --scam-bg: #FEE2E2;
+  --scam-text: #991B1B;
+
+  --warn-accent: #D97706;
+  --warn-bg: #FEF3C7;
+  --warn-text: #92400E;
+
+  --safe-accent: #15803D;
+  --safe-bg: #DCFCE7;
+  --safe-text: #166534;
+
+  --specular-highlight: rgba(0, 0, 0, 0.03);
+  --dot-color: #E5E4DF;
+  --scrollbar-thumb: #D8D6CE;
+  --scrollbar-hover: #B4B1A7;
+}
+
+.dark {
+  /* Dark Mode ("Obsidian & Brushed Pewter") */
+  --bg-canvas: #0A0A09;
+  --bg-surface: #121210;
+  --bg-elevated: #1C1C19;
+  --border-subtle: #262622;
+  --text-primary: #F4F4F0;
+  --text-muted: #8E8C84;
+  --accent-primary: #F4F4F0;
+  --accent-fg: #0A0A09;
+
+  --scam-accent: #F87171;
+  --scam-bg: rgba(217, 78, 52, 0.15);
+  --scam-text: #FCA5A5;
+
+  --warn-accent: #FBBF24;
+  --warn-bg: rgba(217, 119, 6, 0.15);
+  --warn-text: #FDE68A;
+
+  --safe-accent: #34D399;
+  --safe-bg: rgba(21, 128, 61, 0.15);
+  --safe-text: #86EFAC;
+
+  --specular-highlight: rgba(255, 255, 255, 0.08);
+  --dot-color: #262622;
+  --scrollbar-thumb: #2A2A26;
+  --scrollbar-hover: #3A3A34;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Warm Dot Grid Canvas Texture */
+.bg-dot-grid {
+  background-image: radial-gradient(var(--dot-color) 1.25px, transparent 1.25px);
+  background-size: 24px 24px;
+}
+
+/* Specular Border Highlight */
+.specular-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  box-shadow: inset 0 1px 0 0 var(--specular-highlight), 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+/* Custom Editorial Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-canvas);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover);
+}
+
+::selection {
+  background-color: var(--scam-bg);
+  color: var(--scam-text);
+}
+
+/* Monospace Tick Ruler Effect */
+.ruler-tick {
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--border-subtle) 0,
+    var(--border-subtle) 1px,
+    transparent 1px,
+    transparent 10px
+  );
+}

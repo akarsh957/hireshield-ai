@@ -6,20 +6,26 @@
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start --port 3000",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node --test tests/dashboard-legitimacy.test.mjs"
   },
   "dependencies": {
     "@hireshield/database": "workspace:*",
+    "clsx": "^2.1.1",
+    "framer-motion": "^14.6.0",
     "lucide-react": "^0.453.0",
     "next": "^15.0.1",
+    "next-themes": "^0.4.6",
     "react": "^19.0.0-rc-69d4b80a-20241021",
     "react-dom": "^19.0.0-rc-69d4b80a-20241021",
-    "recharts": "^2.13.0"
+    "recharts": "^2.13.0",
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@types/node": "^22.8.1",
     "@types/react": "^19.0.0-rc.1",
     "@types/react-dom": "^19.0.0-rc.1",
+    "autoprefixer": "^10.6.1",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
     "typescript": "^5.6.3"
