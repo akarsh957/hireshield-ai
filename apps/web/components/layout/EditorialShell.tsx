@@ -62,10 +62,10 @@ export const EditorialShell: React.FC<EditorialShellProps> = ({ children }) => {
   }
 
   const navItems = [
-    { label: '01 Overview', href: '/dashboard', icon: Activity },
-    { label: '02 Investigate', href: '/scan', icon: Search },
-    { label: '03 Trust Registry', href: '/registry', icon: Database },
-    { label: '04 Telemetry Logs', href: '/logs', icon: Terminal },
+    { label: 'Overview', href: '/dashboard', icon: Activity },
+    { label: 'Scan Job / Email', href: '/scan', icon: Search },
+    { label: 'Company Registry', href: '/registry', icon: Database },
+    { label: 'Audit Logs', href: '/logs', icon: Terminal },
   ]
 
   return (
@@ -87,8 +87,8 @@ export const EditorialShell: React.FC<EditorialShellProps> = ({ children }) => {
               <div className="flex flex-col">
                 <span className="font-serif text-lg tracking-tight font-medium text-ink whitespace-nowrap">
                   HireShield
-                  <span className="font-mono text-xs font-normal text-ink-muted tracking-widest ml-1.5">
-                    // INTELLIGENCE
+                  <span className="font-sans text-[11px] font-medium text-ink-muted bg-elevated px-2 py-0.5 rounded ml-2 border border-border">
+                    Fraud Intelligence
                   </span>
                 </span>
               </div>
