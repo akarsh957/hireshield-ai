@@ -10,7 +10,7 @@
 2. [High-Level System Architecture](#2-high-level-system-architecture)
 3. [The 4-Stage Cascading Detection Pipeline](#3-the-4-stage-cascading-detection-pipeline)
 4. [Monorepo Codebase & Tech Stack Breakdown](#4-monorepo-codebase--tech-stack-breakdown)
-5. [Frontend Design Engineering ("Warm Editorial Daylight")](#5-frontend-design-engineering-warm-editorial-daylight)
+5. [Executive Dashboard & Frontend Design Engineering](#5-executive-dashboard--frontend-design-engineering)
 6. [Resilience, Fault Tolerance & Zero-Docker Architecture](#6-resilience-fault-tolerance--zero-docker-architecture)
 7. [Database Architecture & Data Contracts](#7-database-architecture--data-contracts)
 8. [Automated Verification & Test Suite](#8-automated-verification--test-suite)
@@ -79,60 +79,113 @@ hireshield-ai-v2/
 │   │   ├── app/
 │   │   │   ├── (auth)/login/   # Dossier card login + 1-Click Demo Bypass
 │   │   │   ├── (dashboard)/
-│   │   │   │   ├── dashboard/  # Bento Grid, Recharts ComposedChart, 10x10 Waffle Matrix
-│   │   │   │   ├── scan/       # 3-state Scanner (Composer -> Terminal X-Ray -> Redline Report)
-│   │   │   │   ├── registry/   # Verified Recruiter & Scam Trust Registry
+│   │   │   │   ├── layout.tsx  # Intelligent layout router isolating executive dashboard header
+│   │   │   │   ├── dashboard/  # Executive SaaS Command Center (12-Col Split, Filters, Quick Inspector)
+│   │   │   │   ├── scan/       # 3-State Scanner (Composer -> Terminal X-Ray -> Redline Dossier + OCR)
+│   │   │   │   ├── registry/   # Verified Recruiter & Scam Trust Registry (DMARC/SPF verified)
 │   │   │   │   └── logs/       # System Telemetry & Cascade Trace Logs
 │   │   │   ├── layout.tsx      # Google Fonts (Instrument Serif, Plus Jakarta Sans, JetBrains Mono)
-│   │   │   └── globals.css     # Warm Editorial daylight design tokens
+│   │   │   └── globals.css     # Persistent Daylight Alabaster & Obsidian Pewter design tokens
 │   │   ├── components/layout/  # EditorialShell (Sticky Masthead + Floating Command Dock)
+│   │   ├── components/ui/      # ThemeToggle (tactile pill slider), custom UI primitives
 │   │   ├── lib/api.ts          # Resilient API client with JWT storage & automatic offline mocks
-│   │   └── tests/              # Node.js built-in automated test suite (node:test)
+│   │   └── tests/              # Node.js built-in automated test suite (node:test, 8 assertions)
 │   ├── api/                    # Express.js REST Gateway, Helmet, CORS, Upstash Rate Limiting
-│   └── ai-service/             # Python FastAPI, Pydantic, DeBERTa-v3, Gemini 1.5 Flash
+│   └── ai-service/             # Python FastAPI, Pydantic v2, DeBERTa-v3 NLP, Gemini 1.5 Flash
 ├── packages/
 │   └── database/               # Prisma ORM, Neon PostgreSQL Schema & Dual Connection Pooler
-├── turbo.json                  # Turborepo task pipeline
+├── turbo.json                  # Turborepo process orchestration pipeline
 └── pnpm-workspace.yaml         # Monorepo dependency management
 ```
 
+### Key Modules & Responsibilities
+- **[apps/web](file:///d:/hireshield-ai-v2/apps/web)**: Next.js 15 frontend leveraging React 19 transitions, Tailwind CSS design system, Framer Motion spring physics, Recharts time-series data visualization, and `next-themes` dual-mode support.
+- **[apps/api](file:///d:/hireshield-ai-v2/apps/api)**: Node.js / Express REST API gateway providing JWT authentication, role-based access control (`ADMIN`, `STANDARD`, `ANALYST`), Upstash Redis token bucket rate limiting, and database abstraction via Prisma.
+- **[apps/ai-service](file:///d:/hireshield-ai-v2/apps/ai-service)**: Python FastAPI microservice orchestrating the multi-tier hybrid detection cascade (Tier 1: Local DeBERTa-v3 transformer, Tier 2: Google Gemini 1.5 Flash reasoning, Tier 3: Heuristic regex fallback).
+- **[packages/database](file:///d:/hireshield-ai-v2/packages/database)**: Shared Prisma ORM package configured with Neon Serverless PostgreSQL dual connection pooling (`DATABASE_URL` pooler on port 6543, `DIRECT_URL` direct migration on port 5432).
+
 ---
 
-## 5. Frontend Design Engineering ("Daylight Alabaster" & "Obsidian Pewter")
+## 5. Executive Dashboard & Frontend Design Engineering
 
-### Design Philosophy (Linear, Attio, Raycast, and Leica Aesthetics)
-- **Eliminated the Traditional Sidebar**: Replaced with a **Sticky Top Editorial Masthead** (with live DeBERTa latency telemetry and theme switcher) and a **Floating Bottom Glassmorphic Command Dock** (`bg-[#141413]`, `backdrop-blur-xl`, with Framer Motion `layoutId` physics).
-- **Persistent Dual Mode Token Architecture (`next-themes`)**:
-  - **Light Mode (`:root` — "Warm Alabaster & Ink")**:
-    - Canvas: `#F7F6F2` (Warm Stone with `bg-dot-grid`)
-    - Surface: `#FFFFFF` (Crisp White Card)
-    - Borders: `#E5E4DF` (Warm Stone Divider)
-    - Ink: `#141413` (Deep Charcoal Ink)
-  - **Dark Mode (`.dark` — "Obsidian & Brushed Pewter")**:
-    - Canvas: `#0A0A09` (Warm Matte Carbon)
-    - Surface: `#121210` (Graphite Card Surface with specular top highlight `rgba(255,255,255,0.08)`)
-    - Elevated: `#1C1C19` (Brushed Pewter input/hover surface)
-    - Borders: `#262622` (Muted Carbon Border)
-    - Ink: `#F4F4F0` (Alabaster White Ink)
-- **Semantic Verdict Tokens**:
-  - `CONFIRMED_SCAM`: Terracotta `#D94E34` (Light `#FEE2E2` / Dark `rgba(217, 78, 52, 0.15)`)
-  - `SUSPICIOUS`: Ochre `#D97706` (Light `#FEF3C7` / Dark `rgba(217, 119, 6, 0.15)`)
-  - `LEGITIMATE`: Forest Sage `#15803D` (Light `#DCFCE7` / Dark `rgba(21, 128, 61, 0.15)`)
-- **Typography Pairing**:
-  - Headings: `Instrument Serif` (editorial authority)
-  - UI & Controls: `Plus Jakarta Sans` (modern clarity)
-  - Telemetry & Scores: `JetBrains Mono` (computational trust)
+HireShield AI applies the design language of high-performance modern developer and financial tools (Linear, Attio, Raycast, and Leica) to recruitment cyber-intelligence.
 
-### Signature Components
-1. **Tactile Monospace Theme Switcher (`components/ui/ThemeToggle.tsx`)**: Segmented pill slider with Framer Motion `layoutId="theme-pill"` between `[ ☀ DAYLIGHT ]` and `[ ☾ OBSIDIAN ]`.
-2. **10x10 Dot-Matrix Waffle Grid**: 100 small interactive rounded squares representing proportional fraud vector breakdowns with 4 distinct, theme-aware semantic colors:
-   - **Advance Fee & Equipment Checks (42%)**: Terracotta Red (`#D94E34` Light / `#F87171` Dark)
-   - **Off-Platform Telegram Interviews (28%)**: Radiant Amber (`#D97706` Light / `#FBBF24` Dark)
-   - **Domain Spoofing & Lookalikes (19%)**: Electric Indigo (`#6366F1` Light / `#818CF8` Dark)
-   - **Pre-Hire PII Harvesting (11%)**: Bright Mint Teal (`#0D9488` Light / `#2DD4BF` Dark)
-3. **Hybrid Recharts Timeline**: `<ComposedChart>` that dynamically adapts Cartesian grid lines and bar fills (`#E5E4DF` in light vs `#262622` in dark) via `useTheme()`.
-4. **Live Terminal X-Ray Scanner**: An animated amber scan bar moving down line-numbered text while real-time margin telemetry logs pop in dynamically.
-5. **Synchronized Redline Split Inspector**: Line-by-line annotated transcript highlighting malicious phrases (`[1]`, `[2]`) using CSS custom properties `var(--scam-bg)` and `var(--scam-text)` for zero eye strain in dark mode.
+### 5.1 Dual-Shell Navigation Architecture
+Rather than forcing a single navigation pattern across divergent workflows, the application employs a tailored dual-shell strategy:
+1. **Executive Command Center ([/dashboard](file:///d:/hireshield-ai-v2/apps/web/app/(dashboard)/dashboard/page.tsx))**:
+   - Controlled by an intelligent layout switcher in [apps/web/app/(dashboard)/layout.tsx](file:///d:/hireshield-ai-v2/apps/web/app/(dashboard)/layout.tsx).
+   - Features a dedicated **64px Sticky Top Navigation Bar** with a crisp brand mark (`Shield` glyph + `Fraud Intelligence` pill).
+   - Interactive navigation tabs with Framer Motion spring-animated bottom underlines (`layoutId="nav-underline"`).
+   - **Detection Cascade Health Popover**: An interactive status indicator pill (`● All Systems Operational · 410ms avg`) with an animated ping indicator that expands into a live subsystem SLA audit breakdown (DeBERTa: 18ms, Gemini 1.5: 392ms, Regex Standby: 0.8ms, 98.4% AI Primary routing).
+   - **Daily Quota Meter**: Visual pill tracking quota utilization (`18 / 25 used today` with a 72% progress bar).
+   - Tactile `ThemeToggle` pill and primary `+ New Scan` shortcut CTA.
+2. **Investigation Workspaces ([/scan](file:///d:/hireshield-ai-v2/apps/web/app/(dashboard)/scan/page.tsx), [/registry](file:///d:/hireshield-ai-v2/apps/web/app/(dashboard)/registry/page.tsx), [/logs](file:///d:/hireshield-ai-v2/apps/web/app/(dashboard)/logs/page.tsx))**:
+   - Rendered within [apps/web/components/layout/EditorialShell.tsx](file:///d:/hireshield-ai-v2/apps/web/components/layout/EditorialShell.tsx).
+   - Pairs a minimalist sticky top masthead (with live DeBERTa latency telemetry and theme switcher) with a **Floating Bottom Glassmorphic Command Dock** (`bg-[#141413]`, `backdrop-blur-xl`, with Framer Motion `layoutId="active-pill"` transitions).
+
+### 5.2 Dynamic Multi-Channel & Timeframe Intelligence Filtering
+The executive dashboard provides real-time client-side pivoting across investigation channels and observation windows:
+- **Channel Segments**: `All Scans` (`all`), `Job Postings` (`postings`), `Recruiter Emails` (`emails`), and `Offer PDFs` (`offers`).
+- **Timeframe Ranges**: `7D`, `30D`, and `90D` observation horizons.
+- Controlled via dual segmented button groups styled in `bg-elevated` with animated Framer Motion sliding indicator pills (`layoutId="activeChannelPill"`, `layoutId="activeDatePill"`).
+
+### 5.3 4-Column Hairline Metric Strip with Count-Up Hooks & Mini Sparklines
+A structural 4-cell hairline grid provides immediate executive clarity:
+- **Total Scans Analyzed**: Dynamic volume count (e.g. `1,284` scans with `+18.4%` month-over-month trend).
+- **Confirmed Scams Blocked**: Neutralized threats (e.g. `86` scams, `6.7%` overall threat rate) highlighted in semantic crimson.
+- **Suspicious / Escalated to AI**: Nuanced cases escalated to Gemini deep audit (e.g. `142` scans, `11.0%` escalation rate).
+- **Mean Detection Speed**: Fleet-wide average processing latency (e.g. `420ms`, `98.4% AI Primary` execution).
+- **Smooth Count-Up Physics (`CountUpValue`)**: A custom 650ms quartic ease-out count-up hook transitions numbers smoothly without digit jitter during filter changes.
+- **Inline 5-Bar Mini Sparklines (`MiniSparkline`)**: Micro-visualizations in each cell illustrate directional trends across the active window.
+
+### 5.4 12-Column Asymmetric Analytical Grid
+The analytical section uses a balanced 12-column layout:
+- **Left 8 Columns — Interactive Recharts ComposedChart**:
+  - Overlays verified safe volume bars against confirmed scam area splines with soft gradient fills.
+  - Interactive legend filter pills allow toggling individual series (`Verified Safe`, `Suspicious`, `Confirmed Scam`) on and off in real time.
+  - Theme-adaptive grid lines and axes (`#E6E4DD` in light mode, `#262622` in dark mode).
+  - Custom monospace tooltip (`CustomChartTooltip`) calculating exact counts, categorized splits, and dynamic Fraud Conversion Rates.
+- **Right 4 Columns — Fraud Vector Breakdown**:
+  - Displays categorical distribution across 228 neutralized scam attempts:
+    1. **Advance Fee & Equipment Checks (42% / 96 scans)**: Cashier check overpayment schemes for home-office MacBooks via Zelle or wire transfer.
+    2. **Off-Platform Messaging (28% / 64 scans)**: Redirecting candidates to Telegram or WhatsApp to evade enterprise career telemetry.
+    3. **Lookalike Domain Spoofing (19% / 43 scans)**: Unauthenticated domains without DKIM/SPF records or public webmail accounts.
+    4. **Pre-Interview PII / Bank Harvesting (11% / 25 scans)**: Premature requests for Social Security Numbers, ID photos, or direct deposit forms before an interview.
+  - **Multi-Segment Horizontal Bar**: Proportional composite bar with interactive hover scaling.
+  - **Interactive Category Cards**: Hovering any category highlights its proportional segment, dims non-matching items, and smoothly expands an animated plain-English contextual threat explanation.
+
+### 5.5 Threat Investigation Dossier Table & Slide-Over Quick Inspector Drawer
+- **Searchable Table**: Filter investigations in real time by target company, role, or scan ID (`SCN-XXXX`), with status filter pills (`ALL`, `CONFIRMED_SCAM`, `SUSPICIOUS`, `LEGITIMATE`).
+- **Channel Indicators**: Distinct badge pills paired with Lucide icons (`Globe` for Job Posting, `Mail` for Recruiter Email, `FileCheck` for Offer PDF).
+- **Slide-Over Quick Inspector Drawer**:
+  - Clicking any row triggers a smooth spring-animated drawer (`AnimatePresence`, `x: 100% -> 0`) from the right margin.
+  - Displays composite threat index gauge, model confidence score, detection engine tag, AI executive summary, and highlighted red-flag phrases with line references.
+  - Presents candidate action directives and an `Open Full Redline Report` button routing directly into `/scan?case=SCN-XXXX`.
+  - Supports keyboard shortcuts (`Escape` key dismissal) and backdrop dismiss.
+
+### 5.6 Live Terminal X-Ray Scanner & Redline Split Inspector ([/scan](file:///d:/hireshield-ai-v2/apps/web/app/(dashboard)/scan/page.tsx))
+- **Terminal X-Ray Scanner**: An animated amber scan bar tracks down line-numbered text while real-time margin telemetry logs populate dynamically.
+- **Synchronized Redline Split Inspector**: Line-by-line annotated transcript highlighting malicious phrases (`[1]`, `[2]`) using CSS custom properties `var(--scam-bg)` and `var(--scam-text)` for clear visibility in both light and dark modes.
+
+### 5.7 Offer Letter OCR Neural Ingestion Card
+- The 4th inspection mode on `/scan` (`[ 04 Offer Letter OCR ]`) enables document analysis:
+  - Drag-and-drop or browse `.pdf`, `.png`, `.jpg`, and `.txt` offer letters.
+  - One-click simulations: `Load Scam Check Offer (.pdf)` (Apex Logistics fake equipment check) or `Load Genuine Offer (.pdf)` (verified Stripe engineering offer).
+  - Neural OCR extraction simulation displaying typography scanning, glyph bounding boxes, and confidence metrics (99.2%).
+
+### 5.8 Persistent Dual-Theme Token Architecture (`next-themes`)
+
+| Design Token | Light Mode (`:root` — "Daylight Alabaster") | Dark Mode (`.dark` — "Obsidian Pewter") | Purpose |
+| :--- | :--- | :--- | :--- |
+| `--canvas` | `#F7F6F2` (Warm Alabaster Stone with dot-grid) | `#0A0A09` (Warm Matte Carbon) | Background canvas |
+| `--surface` | `#FFFFFF` (Crisp Alabaster White Card) | `#121210` (Graphite Card with specular highlight) | Primary card surfaces |
+| `--elevated` | `#EFEFEB` (Subtle Elevated Surface) | `#1C1C19` (Brushed Pewter input surface) | Inputs, segmented controls, hover |
+| `--border` | `#E5E4DF` (Warm Stone Divider) | `#262622` (Muted Carbon Border) | Structural hairline borders |
+| `--ink` | `#141413` (Deep Charcoal Ink) | `#F4F4F0` (Alabaster White Ink) | High-contrast body typography |
+| `--ink-muted` | `#686660` (Mid-tone Editorial Gray) | `#8E8C84` (Muted Carbon Gray) | Subtitles, labels, metadata |
+| `--scam` / `--scam-bg` | `#D94E34` / `#FEE2E2` (Crimson Terracotta) | `#F87171` / `rgba(217, 78, 52, 0.15)` | Confirmed scam alerts & redlines |
+| `--warn` / `--warn-bg` | `#D97706` / `#FEF3C7` (Warm Ochre) | `#FBBF24` / `rgba(217, 119, 6, 0.15)` | Suspicious alerts & escalations |
+| `--safe` / `--safe-bg` | `#15803D` / `#DCFCE7` (Forest Sage) | `#34D399` / `rgba(21, 128, 61, 0.15)` | Verified legitimate indicators |
 
 ---
 
@@ -142,16 +195,16 @@ hireshield-ai-v2/
 HireShield AI runs natively on host OS environments (`Node.js 20` + `Python 3.11`) using lightweight process orchestration via `turborepo` and `uvicorn`, eliminating heavy container overhead and virtualization latency.
 
 ### Resilient Offline Fallback Layer
-- If the remote Neon PostgreSQL instance or Python FastAPI microservice is cold-starting or offline:
-  1. **Demo Account Bypass**: Entering `demo@hireshield.ai / password123` (or clicking the **One-Click Demo Bypass** button) issues a valid signed session.
-  2. **Mock Telemetry Fallback**: The client-side API layer (`lib/api.ts`) catches network disconnects and serves pre-computed, realistic telemetry data.
-  3. **Client-Side Regex Engine**: Pre-screens for `@gmail.com` recruiter domains, Telegram handles, and cashier checks directly in the browser even without internet connectivity.
+If the remote Neon PostgreSQL instance or Python FastAPI microservice is cold-starting or offline:
+1. **Demo Account Bypass**: Entering `demo@hireshield.ai / password123` (or clicking the **One-Click Demo Bypass** button) issues a valid signed session unconditionally.
+2. **Mock Telemetry Fallback**: The client-side API layer ([apps/web/lib/api.ts](file:///d:/hireshield-ai-v2/apps/web/lib/api.ts)) catches network exceptions and serves pre-computed, realistic telemetry data.
+3. **Client-Side Regex Engine**: Pre-screens for `@gmail.com` recruiter domains, Telegram handles, and cashier checks directly in the browser with zero network latency.
 
 ---
 
 ## 7. Database Architecture & Data Contracts
 
-### Prisma Models & Optimizations (`packages/database`)
+### Prisma Models & Optimizations ([packages/database](file:///d:/hireshield-ai-v2/packages/database))
 - **Dual Neon Connection Pooler**:
   - `DATABASE_URL` (Port `6543` / PgBouncer `-pooler`): For low-latency serverless request pooling.
   - `DIRECT_URL` (Port `5432`): For Prisma schema DDL migrations.
@@ -172,7 +225,7 @@ The platform includes an automated test suite built natively with Node.js 20's `
 pnpm --filter @hireshield/web test
 ```
 
-### Verified Assertions
+### Verified Assertions ([apps/web/tests/dashboard-legitimacy.test.mjs](file:///d:/hireshield-ai-v2/apps/web/tests/dashboard-legitimacy.test.mjs))
 1. `✔ KPI Metrics`: Confirmed scam ratio conforms to mathematical expectations (`348 / 1284 = 27.1%`).
 2. `✔ Telemetry SLA`: Average cascade latency is strictly below the 500ms ceiling (`420ms`).
 3. `✔ Waffle Matrix`: 100-tile grid sums to 100% across all 4 threat vectors without nulls.
@@ -202,7 +255,7 @@ Run the automated test suite directly:
 ```powershell
 pnpm --filter @hireshield/web test
 ```
-All 8 verification assertions run and pass in `< 10ms`.
+All 8 verification assertions run and pass in `< 35ms`.
 
 ---
 
@@ -218,11 +271,11 @@ All 8 verification assertions run and pass in `< 10ms`.
 
 ### Q2: "How did you design the user experience differently from standard SaaS admin templates?"
 > **Answer**:  
-> *"Most admin dashboards rely on dark-blue neon cards or standard 240px left navigation drawers that look like generic templates. For HireShield, I implemented a 'Warm Editorial Daylight' aesthetic inspired by Linear, Attio, and Ramp:
-> - Used warm alabaster canvas `#F7F6F2` with pure white cards `#FFFFFF` and stone borders `#E5E4DF`.
-> - Replaced the left sidebar with a sticky top masthead (featuring live DeBERTa latency telemetry) and a floating bottom glassmorphic dock using Framer Motion `layoutId` physics.
-> - Replaced boring pie charts with a tactile 10x10 Waffle Grid (100 small rounded squares).
-> - Created an X-Ray scanning state with an animated laser bar and real-time margin logs that maintain user engagement while inference is running."*
+> *"Most admin dashboards rely on dark-blue neon cards or generic 240px left navigation drawers. For HireShield, I engineered an executive-grade SaaS architecture inspired by Linear, Attio, and Raycast:
+> - **Dual-Shell Navigation**: Used an isolated 64px executive top header on `/dashboard` with animated Framer Motion underlines, live cascade health popovers, and quota meters, while secondary investigation workspaces use a floating glassmorphic dock.
+> - **Tactile Micro-Interactions**: Built a 4-column hairline KPI strip with smooth 650ms quartic ease-out count-up hooks and dynamic 5-bar mini sparklines that eliminate layout shifting.
+> - **Dynamic Analytical Split**: Designed an asymmetric 12-column workspace combining an interactive multi-series Recharts `<ComposedChart>` (with interactive series toggle pills and custom monospace tooltips) and a normalized 4-vector breakdown featuring a proportional multi-segment bar and expandable plain-English threat explanations.
+> - **Slide-Over Quick Dossier Inspector**: Allowed instant inspection of any recent threat report in an animated slide-over drawer with keyboard shortcuts (`Escape` key) and direct routing to full redline reports."*
 
 ### Q3: "How does the platform handle database cold-starts or connection drops?"
 > **Answer**:  
@@ -247,11 +300,13 @@ Use this 60-second walkthrough when demoing the project to an interviewer:
    - Click **`One-Click Demo Bypass`** — showcase the Framer Motion press physics and instant offline entry into the platform.
 2. **Step 2: The Command Center Overview**
    - Land on `/dashboard`.
-   - Point out the live masthead pill: `● DEBERTA-V3: 18ms · ● GEMINI-1.5-FLASH: READY`.
-   - Hover over the **10x10 Waffle Grid** to demonstrate proportional threat vectors (Equipment Checks 42%, Telegram 28%).
-   - Hover over the **Hybrid Recharts Timeline** to show legitimate volume vs confirmed scams.
+   - Point out the live top navigation bar with the **Cascade Health Popover** (`● All Systems Operational · 410ms avg`) and daily quota meter.
+   - Demonstrate dynamic filtering: click between channel tabs (`Job Postings`, `Recruiter Emails`, `Offer PDFs`) and timeframes (`7D`, `30D`, `90D`) — notice the smooth quartic count-up transitions on the 4-column KPI strip.
+   - Interact with the **Recharts Timeline**: toggle series pills (`Verified Safe`, `Suspicious`, `Confirmed Scam`) and hover to view the custom tooltip with dynamic Fraud Conversion Rate.
+   - Hover over the **Fraud Vector Breakdown** multi-segment bar and category cards to reveal animated plain-English threat explanations.
+   - Filter the Recent Investigations table and click a row to slide open the **Quick Dossier Inspector Drawer**.
 3. **Step 3: Investigating a Scam Listing**
-   - Click **`02 Investigate`** on the bottom floating dock (point out the smooth Framer Motion pill animation).
+   - Click **`Scan Job / Email`** on the navigation bar (or dock).
    - In the sample files drawer, click **`Case #01: Telegram Crypto Job`**.
    - Show the live client-side regex pill: `● Off-Platform Signal Detected`.
    - Click **`Run 3-Tier Inspection ↵`**.
@@ -266,7 +321,7 @@ Use this 60-second walkthrough when demoing the project to an interviewer:
      ```powershell
      pnpm --filter @hireshield/web test
      ```
-   - Show all 6 test assertions passing in `< 10ms`.
+   - Show all 8 test assertions passing in `< 35ms`.
 
 ---
 
