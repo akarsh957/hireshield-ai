@@ -1,0 +1,69 @@
+# -----------------------------------------------------------------------------
+# HireShield AI — Render Infrastructure-as-Code Blueprint
+# Deploys Express API Gateway and Python FastAPI AI Microservice on Render
+# Docs: https://render.com/docs/blueprint-spec
+# -----------------------------------------------------------------------------
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1. Python FastAPI AI Microservice (Tier 1 DeBERTa + Tier 2 Gemini Flash)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: hireshield-ai-service
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: apps/ai-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn src.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: GEMINI_API_KEY
+        sync: false # Set in Render Dashboard from Google AI Studio
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: AI_SERVICE_SECRET
+        generateValue: true
+
+  # ---------------------------------------------------------------------------
+  # 2. Express.js REST API Gateway (Auth, RBAC, Upstash Rate Limiting, Prisma)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: hireshield-api-gateway
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: pnpm install && pnpm --filter @hireshield/database generate && pnpm --filter @hireshield/api build
+    startCommand: pnpm --filter @hireshield/api start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: "*" # Update to your production Vercel URL (e.g. https://hireshield-ai.vercel.app)
+      - key: DATABASE_URL
+        sync: false # Neon pooled connection string (port 6543)
+      - key: DIRECT_URL
+        sync: false # Neon direct connection string (port 5432)
+      - key: AI_SERVICE_URL
+        fromService:
+          type: web
+          name: hireshield-ai-service
+          property: host
+      - key: AI_SERVICE_SECRET
+        fromService:
+          type: web
+          name: hireshield-ai-service
+          envVarKey: AI_SERVICE_SECRET
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false # Optional Upstash Redis endpoint
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false # Optional Upstash Redis token

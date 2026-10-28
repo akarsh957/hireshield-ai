@@ -212,11 +212,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    // Update last login timestamp asynchronously
+    // Update user timestamp asynchronously
     prisma.user.update({
       where: { id: user.id },
-      data: { lastLoginAt: new Date() }
-    }).catch((e: any) => console.warn('Failed to update lastLoginAt:', e.message))
+      data: { updatedAt: new Date() }
+    }).catch((e: any) => console.warn('Failed to update user activity:', e.message))
 
     const authPayload: AuthUser = {
       id: user.id,
@@ -237,7 +237,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           email: user.email,
           fullName: user.fullName,
           role: user.role,
-          subscriptionTier: user.subscriptionTier,
+          subscriptionTier: user.role === 'ADMIN' ? 'ENTERPRISE_ORG' : 'PRO_TIER',
           dailyScanQuota: user.dailyScanQuota,
           scansUsedToday: user.scansUsedToday
         },
@@ -287,7 +287,6 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
         fullName: true,
         role: true,
         status: true,
-        subscriptionTier: true,
         dailyScanQuota: true,
         scansUsedToday: true,
         createdAt: true
@@ -301,7 +300,11 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
 
     res.status(200).json({
       success: true,
-      data: user
+      data: {
+        ...user,
+        subscriptionTier: user.role === 'ADMIN' ? 'ENTERPRISE_ORG' : 'PRO_TIER',
+        isDemoMode: false
+      }
     })
   } catch (err: any) {
     // If DB fails during profile fetch, return the decoded token claims

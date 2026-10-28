@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -106,7 +106,7 @@ Stripe provides competitive base compensation ($220,000 - $310,000 USD), compreh
 type ScanMode = '01 Job Posting' | '02 Recruiter Email' | '03 Company Domain' | '04 Offer Letter OCR'
 type WorkspaceState = 'IDLE_INPUT' | 'ANALYZING_XRAY' | 'REPORT_READY'
 
-export default function ScanPage() {
+function ScanContent() {
   const searchParams = useSearchParams()
   const caseParam = searchParams.get('case')
 
@@ -957,3 +957,18 @@ export default function ScanPage() {
     </div>
   )
 }
+
+export default function ScanPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 flex items-center justify-center min-h-[400px]">
+          <div className="font-mono text-sm text-ink-muted animate-pulse">Initializing Security Inspection Terminal...</div>
+        </div>
+      }
+    >
+      <ScanContent />
+    </Suspense>
+  )
+}
+
