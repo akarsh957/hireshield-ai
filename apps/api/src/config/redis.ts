@@ -41,29 +41,33 @@ export const createRateLimiter = (options: {
   const message = options.message || 'Too many requests from this IP. Please try again after 15 minutes.'
   const prefix = options.prefix || 'rl:standard:'
 
-  // When Upstash Redis is active, route rate limiting through RedisStore
+  // When Upstash Redis is active, route rate limiting through RedisStore with fallback
   if (redisClient) {
-    return rateLimit({
-      windowMs,
-      max,
-      standardHeaders: true, // Return RateLimit-* headers (RFC draft-7)
-      legacyHeaders: false,   // Disable X-RateLimit-* headers
-      message: {
-        success: false,
-        error: message,
-        retryAfterMinutes: Math.ceil(windowMs / 60000)
-      },
-      store: new RedisStore({
-        // Send command through Upstash HTTP client
+    try {
+      const store = new RedisStore({
+        // Send command through Upstash REST request body
         sendCommand: async (...args: string[]) => {
-          const command = args[0]
-          const commandArgs = args.slice(1)
-          // @ts-expect-error Upstash generic command interface
-          return redisClient!.call(command, ...commandArgs)
+          const res = await (redisClient as any).client.request({ body: args })
+          return res.result
         },
         prefix
       })
-    })
+
+      return rateLimit({
+        windowMs,
+        max,
+        standardHeaders: true,
+        legacyHeaders: false,
+        message: {
+          success: false,
+          error: message,
+          retryAfterMinutes: Math.ceil(windowMs / 60000)
+        },
+        store
+      })
+    } catch (err: any) {
+      console.warn(`⚠️  [Security] Failed to initialize RedisStore for ${prefix}. Using memory fallback:`, err.message)
+    }
   }
 
   // Native In-Memory fallback for local dev / zero-external dependencies

@@ -128,7 +128,7 @@ If configuring manually:
    - **Region**: Same region as AI service (e.g. `Oregon`)
    - **Branch**: `main`
    - **Root Directory**: Leave blank (root of monorepo)
-   - **Build Command**: `pnpm install --prod=false && pnpm --filter @hireshield/database generate && pnpm --filter @hireshield/api build`
+   - **Build Command**: `pnpm install --prod=false && pnpm --filter @hireshield/database build && pnpm --filter @hireshield/api build`
    - **Start Command**: `pnpm --filter @hireshield/api start`
    - **Health Check Path**: `/health`
    - **Plan**: `Free`

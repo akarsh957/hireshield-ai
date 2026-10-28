@@ -36,7 +36,7 @@ services:
     runtime: node
     region: oregon
     plan: free
-    buildCommand: pnpm install --prod=false && pnpm --filter @hireshield/database generate && pnpm --filter @hireshield/api build
+    buildCommand: pnpm install --prod=false && pnpm --filter @hireshield/database build && pnpm --filter @hireshield/api build
     startCommand: pnpm --filter @hireshield/api start
     healthCheckPath: /health
     autoDeploy: true
