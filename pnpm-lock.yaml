@@ -78,9 +78,6 @@ importers:
 
   apps/web:
     dependencies:
-      '@hireshield/database':
-        specifier: workspace:*
-        version: link:../../packages/database
       clsx:
         specifier: ^2.1.1
         version: 2.1.1

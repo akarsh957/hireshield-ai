@@ -10,7 +10,6 @@
     "test": "node --test tests/dashboard-legitimacy.test.mjs"
   },
   "dependencies": {
-    "@hireshield/database": "workspace:*",
     "clsx": "^2.1.1",
     "framer-motion": "^14.6.0",
     "lucide-react": "^0.453.0",
