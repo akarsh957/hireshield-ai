@@ -13,7 +13,7 @@ This guide provides end-to-end instructions for deploying HireShield AI to moder
 
 ```mermaid
 graph LR
-    User["Job Seekers & Analysts"] -->|HTTPS| Vercel["Vercel: Next.js 15 App\n(https://hireshield.vercel.app)"]
+    User["Job Seekers & Analysts"] -->|HTTPS| Vercel["Vercel: Next.js 15 App\n(https://web-xi-ruddy-81.vercel.app)"]
     Vercel -->|REST + JWT| RenderAPI["Render: Express API Gateway\n(https://hireshield-api.onrender.com)"]
     RenderAPI -->|Inference Cascade| RenderAI["Render: FastAPI AI Microservice\n(https://hireshield-ai.onrender.com)"]
     RenderAPI -->|Port 6543 PgBouncer| Neon["Neon Serverless PostgreSQL"]
