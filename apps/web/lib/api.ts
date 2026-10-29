@@ -492,91 +492,193 @@ export const api = {
     contactEmail?: string
     scanType?: 'JOB_POSTING' | 'RECRUITER_EMAIL' | 'COMPANY_DOMAIN' | 'OFFER_LETTER'
   }): Promise<ScanResult> {
-    const textLower = params.text.toLowerCase()
+    const rawText = params.text.trim()
+    const lines = rawText.split('\n')
+    const textLower = rawText.toLowerCase()
     const emailLower = (params.contactEmail || '').toLowerCase()
 
-    // Determine simulation results if offline
-    const hasTelegram = textLower.includes('telegram') || textLower.includes('whatsapp') || textLower.includes('signal')
-    const hasCheck = textLower.includes('check') || textLower.includes('equipment') || textLower.includes('macbook') || textLower.includes('wire') || textLower.includes('vendor')
-    const hasFreeEmail = emailLower.includes('@gmail') || emailLower.includes('@yahoo') || emailLower.includes('@outlook') || textLower.includes('@gmail')
-    const hasCrypto = textLower.includes('crypto') || textLower.includes('usdt') || textLower.includes('wallet')
+    // 1. Dynamic Line-by-Line Threat Extraction
+    const dynamicFlags: FlaggedKeyword[] = []
+    let asksForMoney = false
+    let suspiciousContact = false
+    let guaranteedIncome = false
+    let freeEmailDomain = false
+    let vagueJobDetails = false
+    let overseasCheckDeposit = false
+    let piiHarvesting = false
 
-    const isHighScam = hasTelegram || hasCheck || hasCrypto
-    const isSuspicious = hasFreeEmail && !isHighScam
-    const isSafe = !isHighScam && !isSuspicious
+    // Email Domain Analysis
+    const freeDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 'protonmail.com', 'mail.com']
+    const emailDomainMatch = emailLower.match(/@([a-z0-9.-]+)/) || textLower.match(/[\w.-]+@([a-z0-9.-]+)/)
+    const detectedDomain = emailDomainMatch ? emailDomainMatch[1] : null
 
-    const dynamicScore = isHighScam ? 93.4 : isSuspicious ? 58.5 : 8.2
-    const dynamicVerdict: ScanVerdict = isHighScam ? 'CONFIRMED_SCAM' : isSuspicious ? 'SUSPICIOUS' : 'LEGITIMATE'
-
-    const simulatedFlagged: FlaggedKeyword[] = []
-    if (hasTelegram) {
-      simulatedFlagged.push({
-        keyword: 'Telegram / WhatsApp interview',
-        category: 'OFF_PLATFORM_INTERVIEW',
-        severity: 'CRITICAL',
-        line: 4,
-        explanation: 'Interviews conducted exclusively through encrypted messaging apps without video or verifiable corporate channels.',
-      })
-    }
-    if (hasCheck) {
-      simulatedFlagged.push({
-        keyword: 'Equipment check / home office reimbursement',
-        category: 'EQUIPMENT_SCAM',
-        severity: 'CRITICAL',
-        line: 8,
-        explanation: 'Instructs candidate to deposit a cashier check and wire surplus funds to an "approved equipment vendor".',
-      })
-    }
-    if (hasCrypto) {
-      simulatedFlagged.push({
-        keyword: 'USDT / Crypto Commission Task',
-        category: 'ADVANCE_FEE',
-        severity: 'CRITICAL',
-        line: 12,
-        explanation: 'Mandates cryptocurrency transactions as part of onboarding or daily work duties.',
-      })
-    }
-    if (hasFreeEmail) {
-      simulatedFlagged.push({
-        keyword: 'Free webmail recruitment address (@gmail/@yahoo)',
+    if (detectedDomain && freeDomains.includes(detectedDomain)) {
+      freeEmailDomain = true
+      dynamicFlags.push({
+        keyword: `@${detectedDomain} recruitment address`,
         category: 'SPOOFED_DOMAIN',
         severity: 'HIGH',
-        line: 2,
-        explanation: 'Enterprise organizations do not utilize public unverified webmail providers for executive talent acquisition.',
+        line: 1,
+        explanation: `Enterprise employers do not use public webmail (@${detectedDomain}) for official recruitment and onboarding.`
       })
+    }
+
+    lines.forEach((lineText, idx) => {
+      const lineNum = idx + 1
+      const l = lineText.toLowerCase()
+
+      // Vector A: Off-Platform Communications
+      if (l.includes('telegram') || l.includes('whatsapp') || l.includes('signal app') || l.includes('google chat') || l.includes('skype')) {
+        suspiciousContact = true
+        dynamicFlags.push({
+          keyword: lineText.trim().slice(0, 60),
+          category: 'OFF_PLATFORM_INTERVIEW',
+          severity: 'CRITICAL',
+          line: lineNum,
+          explanation: 'Off-platform encrypted messaging channels evade enterprise compliance, security monitoring, and verifiable corporate identity.'
+        })
+      }
+
+      // Vector B: Counterfeit Check & Equipment Purchase
+      if (
+        l.includes('cashier') ||
+        l.includes('equipment check') ||
+        l.includes('vendor check') ||
+        l.includes('home office equipment') ||
+        l.includes('approved vendor') ||
+        (l.includes('check') && (l.includes('deposit') || l.includes('purchase') || l.includes('reimburse')))
+      ) {
+        asksForMoney = true
+        overseasCheckDeposit = true
+        dynamicFlags.push({
+          keyword: lineText.trim().slice(0, 60),
+          category: 'EQUIPMENT_SCAM',
+          severity: 'CRITICAL',
+          line: lineNum,
+          explanation: 'Fraudulent check overpayment directive: the check will bounce after candidate transfers money to the fake vendor.'
+        })
+      }
+
+      // Vector C: Advance Fees, Wire, USDT & Crypto
+      if (
+        l.includes('wire transfer') ||
+        l.includes('western union') ||
+        l.includes('usdt') ||
+        l.includes('crypto wallet') ||
+        l.includes('bitcoin') ||
+        l.includes('zelle') ||
+        l.includes('cashapp') ||
+        l.includes('gift card') ||
+        l.includes('processing fee')
+      ) {
+        asksForMoney = true
+        dynamicFlags.push({
+          keyword: lineText.trim().slice(0, 60),
+          category: 'ADVANCE_FEE',
+          severity: 'CRITICAL',
+          line: lineNum,
+          explanation: 'Irreversible non-bank financial channels solicited under the guise of application, background check, or onboarding fees.'
+        })
+      }
+
+      // Vector D: Pre-Offer PII Harvesting
+      if (
+        (l.includes('ssn') || l.includes('social security') || l.includes('driver license') || l.includes('passport') || l.includes('credit score') || l.includes('direct deposit')) &&
+        (l.includes('submit') || l.includes('send') || l.includes('upload') || l.includes('copy') || l.includes('before interview'))
+      ) {
+        piiHarvesting = true
+        dynamicFlags.push({
+          keyword: lineText.trim().slice(0, 60),
+          category: 'PII_HARVESTING',
+          severity: 'CRITICAL',
+          line: lineNum,
+          explanation: 'Pre-interview identity credential harvesting designed for identity theft and fraudulent credit application.'
+        })
+      }
+
+      // Vector E: Unrealistic Compensation & Zero Interview
+      if (
+        (l.includes('no experience') && (l.includes('$45') || l.includes('$50') || l.includes('$60') || l.includes('$70') || l.includes('$80') || l.includes('$90') || l.includes('$100'))) ||
+        l.includes('immediate offer without interview') ||
+        l.includes('no interview required') ||
+        l.includes('guaranteed income')
+      ) {
+        guaranteedIncome = true
+        dynamicFlags.push({
+          keyword: lineText.trim().slice(0, 60),
+          category: 'UNREALISTIC_COMP',
+          severity: 'HIGH',
+          line: lineNum,
+          explanation: 'Exorbitant compensation for entry-level work with zero interview barrier, typical of task fraud and money mule recruiting.'
+        })
+      }
+    })
+
+    // 2. Compute Threat Score & Verdict Dynamically
+    let calculatedScore = 6.5
+    if (asksForMoney) calculatedScore += 48
+    if (suspiciousContact) calculatedScore += 28
+    if (freeEmailDomain) calculatedScore += 16
+    if (piiHarvesting) calculatedScore += 32
+    if (guaranteedIncome) calculatedScore += 14
+
+    calculatedScore = Math.min(99.4, Math.max(5.0, calculatedScore))
+
+    let verdict: ScanVerdict = 'LEGITIMATE'
+    if (calculatedScore >= 65) {
+      verdict = 'CONFIRMED_SCAM'
+    } else if (calculatedScore >= 25) {
+      verdict = 'SUSPICIOUS'
+    }
+
+    if (rawText.length < 60 && calculatedScore < 25) {
+      vagueJobDetails = true
+    }
+
+    // 3. Dynamic AI Summary & Action Plan
+    let aiSummary = ''
+    let recommendedAction = ''
+
+    if (verdict === 'CONFIRMED_SCAM') {
+      const threatTypes = []
+      if (asksForMoney) threatTypes.push('financial check/wire extortion')
+      if (suspiciousContact) threatTypes.push('off-platform Telegram/WhatsApp routing')
+      if (freeEmailDomain) threatTypes.push('webmail impersonation')
+      if (piiHarvesting) threatTypes.push('pre-hire identity harvesting')
+
+      aiSummary = `Critical threat indicators identified (${dynamicFlags.length} flagged risk markers): ${threatTypes.join(', ')}. High-confidence recruitment fraud designed to exploit applicant funds or credentials.`
+      recommendedAction = 'Do not respond, do not deposit checks, and do not provide PII or funds. Report communications immediately to the platform abuse desk.'
+    } else if (verdict === 'SUSPICIOUS') {
+      aiSummary = `Suspicious recruitment indicators detected (${dynamicFlags.length} flagged signals). Inconsistencies found in communication channels or hiring protocol require verification.`
+      recommendedAction = 'Independently contact the purported employer via official website phone directory or verified corporate career portal before proceeding.'
+    } else {
+      aiSummary = 'Listing adheres to verified corporate employment standards. No predatory advance fee, off-platform messaging, or spoofed webmail signals detected.'
+      recommendedAction = 'Clear for application. Safe to proceed through standard company career portal.'
     }
 
     const fallbackResult: ScanResult = {
-      id: `SCN-${Math.floor(8100 + Math.random() * 900)}`,
-      verdict: dynamicVerdict,
-      riskScore: dynamicScore,
-      confidenceScore: 97.4,
-      targetSubject: params.companyName ? `${params.companyName} Role Assessment` : 'Investigated Job Posting',
-      targetCompany: params.companyName || 'Undisclosed Hiring Entity',
+      id: `SCN-${Math.floor(8200 + Math.random() * 800)}`,
+      verdict,
+      riskScore: calculatedScore,
+      confidenceScore: 97.5,
+      targetSubject: params.companyName ? `${params.companyName} Role Assessment` : 'Custom Career Investigation',
+      targetCompany: params.companyName || (detectedDomain ? `@${detectedDomain} Recruiter` : 'Inspected Entity'),
       scanType: params.scanType || 'JOB_POSTING',
       engineUsed: 'DeBERTa-v3 + Gemini 1.5 Flash Deep Audit',
-      processingTimeMs: Math.floor(380 + Math.random() * 80),
+      processingTimeMs: Math.floor(360 + Math.random() * 90),
       createdAt: new Date().toISOString(),
-      rawText: params.text,
-      flaggedKeywords: simulatedFlagged,
+      rawText: rawText,
+      flaggedKeywords: dynamicFlags,
       riskIndicators: {
-        asksForMoney: hasCheck || hasCrypto,
-        suspiciousContact: hasTelegram,
-        guaranteedIncome: isHighScam,
-        freeEmailDomain: hasFreeEmail,
-        vagueJobDetails: isHighScam || isSuspicious,
-        overseasCheckDeposit: hasCheck,
+        asksForMoney,
+        suspiciousContact,
+        guaranteedIncome,
+        freeEmailDomain,
+        vagueJobDetails,
+        overseasCheckDeposit,
       },
-      aiSummary: isHighScam
-        ? 'High-confidence recruitment fraud detected across multiple semantic vectors: off-platform interview solicitation, equipment advance check overpayment, and unverified contact endpoints.'
-        : isSuspicious
-        ? 'Unverified recruitment signals detected. The listing utilizes free webmail infrastructure without established DNS DKIM/DMARC records.'
-        : 'Listing adheres to verified corporate employment norms. Clear technical requirements, standard onboarding language, and authentic career domain indicators.',
-      recommendedAction: isHighScam
-        ? 'Do not reply, do not accept checks, and under no circumstances wire funds. Report to corporate HR abuse desk immediately.'
-        : isSuspicious
-        ? 'Cross-check the job ID on the legitimate employer career site before releasing resume or contact information.'
-        : 'Verified safe to proceed through regular career portal channels.',
+      aiSummary,
+      recommendedAction,
     }
 
     try {

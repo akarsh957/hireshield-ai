@@ -322,3 +322,47 @@ def analyze_job_cascade(text: str, company_name: str = None) -> Dict[str, Any]:
         "recommendedAction": regex_res["recommendedAction"],
         "tierUsed": "TIER_3_REGEX"
     }
+
+
+def analyze_ocr_gemini(base64_data: str, mime_type: str = "image/png") -> Dict[str, Any]:
+    """
+    Multimodal OCR via Gemini 1.5 Flash:
+    Transcribes images or PDFs and extracts company & contact vectors.
+    """
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY is not configured in environment.")
+
+    import google.generativeai as genai
+    genai.configure(api_key=api_key)
+
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-flash",
+        generation_config={
+            "temperature": 0.1,
+            "response_mime_type": "application/json"
+        }
+    )
+
+    image_part = {
+        "mime_type": mime_type,
+        "data": base64_data
+    }
+
+    prompt = """
+    Analyze and transcribe this job document / offer letter / email screenshot.
+    Extract the complete text, identify company name, and contact email.
+    
+    You MUST respond with this exact JSON schema:
+    {
+      "text": "<full transcribed text>",
+      "companyName": "<company or null>",
+      "contactEmail": "<email address or null>"
+    }
+    """
+
+    response = model.generate_content([image_part, prompt])
+    if not response or not response.text:
+        raise RuntimeError("Empty response received from Gemini OCR.")
+
+    return json.loads(response.text.strip())

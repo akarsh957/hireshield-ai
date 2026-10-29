@@ -4,6 +4,8 @@ import helmet from 'helmet'
 import dotenv from 'dotenv'
 import { globalLimiter } from './config/redis'
 import authRoutes from './routes/auth.routes'
+import scansRoutes from './routes/scans.routes'
+import analyticsRoutes from './routes/analytics.routes'
 import { prisma } from '@hireshield/database'
 
 dotenv.config()
@@ -78,6 +80,8 @@ app.get('/health', async (_req: Request, res: Response) => {
 // -----------------------------------------------------------------------------
 
 app.use('/api/auth', authRoutes)
+app.use('/api/scans', scansRoutes)
+app.use('/api/analytics', analyticsRoutes)
 
 // 404 Route Handler
 app.use((_req: Request, res: Response) => {

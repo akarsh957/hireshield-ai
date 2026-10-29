@@ -11,11 +11,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 try:
-    from .schemas import JobScanRequest, ScanResponse
-    from .scam_detector import analyze_job_cascade, get_nlp_pipeline
+    from .schemas import JobScanRequest, ScanResponse, OcrScanRequest
+    from .scam_detector import analyze_job_cascade, get_nlp_pipeline, analyze_ocr_gemini
 except (ImportError, ValueError):
-    from schemas import JobScanRequest, ScanResponse
-    from scam_detector import analyze_job_cascade, get_nlp_pipeline
+    from schemas import JobScanRequest, ScanResponse, OcrScanRequest
+    from scam_detector import analyze_job_cascade, get_nlp_pipeline, analyze_ocr_gemini
 
 # Configure logging
 logging.basicConfig(
@@ -100,6 +100,28 @@ async def analyze_job(payload: JobScanRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Inference cascade failed: {str(exc)}"
+        )
+
+@app.post("/analyze/ocr", status_code=status.HTTP_200_OK)
+async def analyze_ocr(payload: OcrScanRequest):
+    """
+    Multimodal OCR Endpoint:
+    Uses Gemini 1.5 Flash Vision to transcribe offer letters and document scans.
+    """
+    try:
+        result = analyze_ocr_gemini(
+            base64_data=payload.base64Data,
+            mime_type=payload.mimeType or "image/png"
+        )
+        return {
+            "success": True,
+            "data": result
+        }
+    except Exception as exc:
+        logger.error(f"OCR transcription failed: {exc}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"OCR transcription failed: {str(exc)}"
         )
 
 # Optional root redirect or ping

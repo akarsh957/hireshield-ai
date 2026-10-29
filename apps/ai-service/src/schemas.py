@@ -22,6 +22,10 @@ class JobScanRequest(BaseModel):
         description="Optional contact email address provided in the job post."
     )
 
+class OcrScanRequest(BaseModel):
+    base64Data: str = Field(..., description="Base64 encoded string of image or document")
+    mimeType: Optional[str] = Field(default="image/png", description="MIME type of document (e.g. image/png, application/pdf)")
+
 class FlaggedKeywordItem(BaseModel):
     keyword: str
     category: str
