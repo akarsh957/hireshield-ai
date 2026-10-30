@@ -1,60 +1,92 @@
-# 🛡️ HireShield AI — Comprehensive Project Architecture & Interview Dossier
+# 🛡️ HireShield AI — Architecture & Project Guide
 
-> **Elevator Pitch**:  
-> *"HireShield AI is a production-ready, multi-tier recruitment fraud and job scam intelligence platform. It defends job seekers and enterprises against advance-fee fake check schemes, off-platform Telegram impersonation rings, and credential harvesting. It combines a client-side regex pre-scanner, local DeBERTa-v3 transformer models, and Google Gemini 1.5 Flash deep semantic audits in an automated cascade with 100% zero-downtime offline fallbacks."*
+> **Simple 30-Second Pitch**:  
+> *"HireShield AI is a cybersecurity tool that protects job seekers and companies from job scams, fake recruiter emails, and fraudulent check offers. You simply paste a job post or upload an offer letter (PDF/image), and HireShield analyzes it in under 500 milliseconds—giving you a 0–100 Risk Score and red-line highlights explaining exactly why it is safe or fraudulent."*
+
+---
+
+### 🌐 Live Production Links
+- **Frontend Web App (Vercel)**: [https://hireshield-ai.vercel.app](https://hireshield-ai.vercel.app) *(Alternate: [https://web-xi-ruddy-81.vercel.app](https://web-xi-ruddy-81.vercel.app))*
+- **Backend API Gateway (Render)**: [https://hireshield-api-gateway.onrender.com](https://hireshield-api-gateway.onrender.com)
+- **AI Microservice (Render)**: [https://hireshield-ai-service.onrender.com](https://hireshield-ai-service.onrender.com)
+- **Database**: Neon Serverless PostgreSQL (Dual PgBouncer Connection Pooler)
+
+---
+
+## 💡 How HireShield AI Works (In Simple Terms)
+
+1. **Step 1: Input or Upload**
+   - You paste a job description, paste an email, or drag-and-drop an offer letter (PDF, PNG, JPG).
+   - If you upload a PDF or image, **in-browser OCR (Tesseract.js & PDF.js)** automatically reads the text directly inside your browser—no file uploads to external servers needed.
+
+2. **Step 2: Instant Pattern Check (< 20ms)**
+   - As you type, a instant pre-scanner immediately checks for red flags:
+     - Free recruiter emails (`@gmail.com`, `@yahoo.com`) instead of real company domains.
+     - Redirections to off-platform chat apps (`Telegram`, `WhatsApp`, `Signal`).
+     - Fake check or equipment fee keywords (`cashier's check`, `Zelle vendor`, `home-office equipment refund`).
+
+3. **Step 3: AI Intelligence Audit (~300ms)**
+   - Ambiguous listings are passed through **Google Gemini 1.5 Flash** and transformer NLP models.
+   - The AI checks if the job duties, salary figures, and company identity match reality.
+
+4. **Step 4: The Redline Risk Dossier**
+   - You receive an instant **Risk Score (0 to 100)**:
+     - 🟢 **0–25 (Legitimate)**: Safe, authentic corporate offer.
+     - 🟡 **26–74 (Suspicious)**: Warnings and flags detected; requires caution.
+     - 🔴 **75–100 (Confirmed Scam)**: Danger! Specific redline boxes show you the exact fraudulent sentences.
 
 ---
 
 ## 📑 Table of Contents
-1. [Executive Summary & Problem Statement](#1-executive-summary--problem-statement)
-2. [High-Level System Architecture](#2-high-level-system-architecture)
-3. [The 4-Stage Cascading Detection Pipeline](#3-the-4-stage-cascading-detection-pipeline)
+1. [Simple Problem & Solution](#1-simple-problem--solution)
+2. [High-Level Architecture](#2-high-level-architecture)
+3. [The 4-Stage Detection Pipeline](#3-the-4-stage-detection-pipeline)
 4. [Monorepo Codebase & Tech Stack Breakdown](#4-monorepo-codebase--tech-stack-breakdown)
-5. [Executive Dashboard & Frontend Design Engineering](#5-executive-dashboard--frontend-design-engineering)
-6. [Resilience, Fault Tolerance & Zero-Docker Architecture](#6-resilience-fault-tolerance--zero-docker-architecture)
-7. [Database Architecture & Data Contracts](#7-database-architecture--data-contracts)
+5. [Executive Dashboard & Frontend Highlights](#5-executive-dashboard--frontend-highlights)
+6. [Offline Mode & 100% Resilience](#6-offline-mode--100-resilience)
+7. [Database Architecture & Schema](#7-database-architecture--schema)
 8. [Automated Verification & Test Suite](#8-automated-verification--test-suite)
-9. [Interview Q&A: Technical Deep Dive & STAR Stories](#9-interview-qa-technical-deep-dive--star-stories)
-10. [Live Demo Walkthrough Script](#10-live-demo-walkthrough-script)
+9. [Interview Q&A: Simple Answers & Deep Dives](#9-interview-qa-simple-answers--deep-dives)
+10. [Live 60-Second Demo Script](#10-live-60-second-demo-script)
 
 ---
 
-## 1. Executive Summary & Problem Statement
+## 1. Simple Problem & Solution
 
 ### The Problem
-- **Recruitment Fraud Epidemic**: Over \$2.7B is lost annually to employment scams. Modern scammers leverage generative AI to craft pristine job descriptions, impersonate Fortune 500 recruiters on LinkedIn, and divert candidates to Telegram/WhatsApp.
-- **Top Fraud Vectors**:
-  1. **Advance Fee / Equipment Checks (42%)**: Mailing fraudulent cashier checks for \$4,000+ and instructing victims to wire funds back to a "certified vendor" for MacBook workstations.
-  2. **Off-Platform Telegram Interviews (28%)**: Bypassing corporate vetting to conduct text-only fake interviews.
-  3. **Domain Spoofing (19%)**: Using lookalike domains (`apexlogistics-careers-us.com`) without DKIM/SPF records.
-  4. **PII Credential Harvesting (11%)**: Demanding SSNs and passports before an interview.
+Over **\$2.7 Billion** is stolen every year through recruitment scams. Scammers use AI to write realistic job postings, impersonate real recruiters on LinkedIn, and target job seekers with four major traps:
+1. **Fake Equipment Checks (42%)**: Mailing a fake \$4,000 cashier check and asking the candidate to wire money back to a "certified vendor" for a laptop.
+2. **Off-Platform Telegram Interviews (28%)**: Refusing phone or video calls and conducting interviews entirely over Telegram or WhatsApp.
+3. **Lookalike Domains (19%)**: Sending emails from fake domains like `careers-stripe-global.com` instead of `stripe.com`.
+4. **Identity & Bank Theft (11%)**: Asking for SSNs, passport copies, or bank account routing numbers before even scheduling an interview.
 
-### The Solution: HireShield AI
-HireShield AI provides **instant, explainable threat telemetry** through an automated 4-stage cascade, returning detailed **Redline Risk Reports** that annotate fraudulent clauses with line-number precision in under **420ms**.
+### The Solution
+HireShield AI flags all of these threats in **under 450ms**, highlighting fraudulent clauses line-by-line so candidates never fall for a scam.
 
 ---
 
-## 2. High-Level System Architecture
+## 2. High-Level Architecture
 
 ```mermaid
 graph TD
-    Client["Client Browser (Next.js 15 / React 19)"]
-    Gateway["Express API Gateway (:4000)"]
-    Redis["Upstash Redis / In-Memory Token Bucket"]
-    Neon["Neon Serverless PostgreSQL (Dual Pooler)"]
-    AIService["FastAPI AI Microservice (:8000)"]
-    Gemini["Google Gemini 1.5 Flash"]
-    DeBERTa["Local DeBERTa-v3 NLP"]
+    Client["User Browser\n(Next.js 15 on Vercel)\nhttps://hireshield-ai.vercel.app"]
+    Gateway["Express API Gateway\n(Render / Node.js :4000)\nhttps://hireshield-api-gateway.onrender.com"]
+    Redis["Upstash Redis\n(Rate Limiting & Caching)"]
+    Neon["Neon Serverless PostgreSQL\n(PgBouncer Port 6543)"]
+    AIService["FastAPI AI Microservice\n(Render / Python 3.11 :8000)\nhttps://hireshield-ai-service.onrender.com"]
+    Gemini["Google Gemini 1.5 Flash\n(Google AI Studio)"]
+    DeBERTa["Local DeBERTa / Regex Classifier"]
 
-    Client -->|REST + JWT| Gateway
-    Client -->|Live Regex Pre-Scan| Client
-    Gateway -->|Rate Limiting| Redis
-    Gateway -->|Prisma PgBouncer :6543| Neon
-    Gateway -->|Inference Cascade| AIService
-    AIService -->|Stage 2: Token Classification| DeBERTa
-    AIService -->|Stage 3: Deep Semantic Audit| Gemini
+    Client -->|1. REST + JWT / OCR Ingestion| Gateway
+    Client -->|Live Browser Pre-Scan| Client
+    Gateway -->|2. Rate Limit Check| Redis
+    Gateway -->|3. Save / Read Reports| Neon
+    Gateway -->|4. AI Inference Request| AIService
+    AIService -->|5. Token Classification| DeBERTa
+    AIService -->|6. Deep Semantic Analysis| Gemini
     Gateway -.->|Offline Resilient Fallback| Client
 ```
+
 
 ---
 
@@ -79,32 +111,37 @@ hireshield-ai-v2/
 │   │   ├── app/
 │   │   │   ├── (auth)/login/   # Dossier card login + 1-Click Demo Bypass
 │   │   │   ├── (dashboard)/
-│   │   │   │   ├── layout.tsx  # Intelligent layout router isolating executive dashboard header
-│   │   │   │   ├── dashboard/  # Executive SaaS Command Center (12-Col Split, Filters, Quick Inspector)
+│   │   │   │   ├── layout.tsx  # Layout router isolating executive dashboard navigation
+│   │   │   │   ├── dashboard/  # Executive SaaS Command Center (Filters, Charts, Quick Inspector)
 │   │   │   │   ├── scan/       # 3-State Scanner (Composer -> Terminal X-Ray -> Redline Dossier + OCR)
 │   │   │   │   ├── registry/   # Verified Recruiter & Scam Trust Registry (DMARC/SPF verified)
 │   │   │   │   └── logs/       # System Telemetry & Cascade Trace Logs
-│   │   │   ├── layout.tsx      # Google Fonts (Instrument Serif, Plus Jakarta Sans, JetBrains Mono)
-│   │   │   └── globals.css     # Persistent Daylight Alabaster & Obsidian Pewter design tokens
+│   │   │   ├── layout.tsx      # High-performance web typography (Google Fonts)
+│   │   │   └── globals.css     # Clean Daylight Alabaster & Obsidian Pewter design tokens
 │   │   ├── components/layout/  # EditorialShell (Sticky Masthead + Floating Command Dock)
 │   │   ├── components/ui/      # ThemeToggle (tactile pill slider), custom UI primitives
-│   │   ├── lib/api.ts          # Resilient API client with JWT storage & automatic offline mocks
+│   │   ├── lib/api.ts          # Resilient API client with JWT storage & automatic offline fallbacks
+│   │   ├── lib/ocr.ts          # Client-side Neural OCR Engine (Tesseract.js & PDF.js)
 │   │   └── tests/              # Node.js built-in automated test suite (node:test, 8 assertions)
 │   ├── api/                    # Express.js REST Gateway, Helmet, CORS, Upstash Rate Limiting
 │   └── ai-service/             # Python FastAPI, Pydantic v2, DeBERTa-v3 NLP, Gemini 1.5 Flash
 ├── packages/
 │   └── database/               # Prisma ORM, Neon PostgreSQL Schema & Dual Connection Pooler
-├── turbo.json                  # Turborepo process orchestration pipeline
+├── vercel.json                 # Vercel Monorepo deployment specification
+├── render.yaml                 # Render Infrastructure-as-Code Blueprint
+├── turbo.json                  # Turborepo build & cache orchestration
 └── pnpm-workspace.yaml         # Monorepo dependency management
 ```
 
 ### Key Modules & Responsibilities
-- **[apps/web](file:///d:/hireshield-ai-v2/apps/web)**: Next.js 15 frontend leveraging React 19 transitions, Tailwind CSS design system, Framer Motion spring physics, Recharts time-series data visualization, and `next-themes` dual-mode support.
-- **[apps/api](file:///d:/hireshield-ai-v2/apps/api)**: Node.js / Express REST API gateway providing JWT authentication, role-based access control (`ADMIN`, `STANDARD`, `ANALYST`), Upstash Redis token bucket rate limiting, and database abstraction via Prisma.
-- **[apps/ai-service](file:///d:/hireshield-ai-v2/apps/ai-service)**: Python FastAPI microservice orchestrating the multi-tier hybrid detection cascade (Tier 1: Local DeBERTa-v3 transformer, Tier 2: Google Gemini 1.5 Flash reasoning, Tier 3: Heuristic regex fallback).
-- **[packages/database](file:///d:/hireshield-ai-v2/packages/database)**: Shared Prisma ORM package configured with Neon Serverless PostgreSQL dual connection pooling (`DATABASE_URL` pooler on port 6543, `DIRECT_URL` direct migration on port 5432).
+- **[apps/web](file:///d:/hireshield-ai-v2/apps/web)**: Next.js 15 web application. Uses React 19, Tailwind CSS, Framer Motion animations, Recharts analytics, and **in-browser OCR (Tesseract.js & PDF.js)** for analyzing offer letter images and PDFs without external file uploads.
+- **[apps/api](file:///d:/hireshield-ai-v2/apps/api)**: Node.js Express API gateway. Handles user authentication, JWT session signing, Upstash Redis rate limiting, and database queries.
+- **[apps/ai-service](file:///d:/hireshield-ai-v2/apps/ai-service)**: Python FastAPI microservice. Runs the multi-tier detection pipeline using Google Gemini 1.5 Flash, DeBERTa-v3 NLP classification, and regex safety checks.
+- **[packages/database](file:///d:/hireshield-ai-v2/packages/database)**: Prisma ORM connected to Neon Serverless PostgreSQL with dual pooling (`DATABASE_URL` pooler on port 6543, `DIRECT_URL` direct migration on port 5432).
+- **[vercel.json](file:///d:/hireshield-ai-v2/vercel.json)**: Configures Vercel to automatically compile the Next.js web application (`apps/web`) from the monorepo root upon every GitHub push.
 
 ---
+
 
 ## 5. Executive Dashboard & Frontend Design Engineering
 
@@ -288,19 +325,28 @@ All 8 verification assertions run and pass in `< 35ms`.
 > **Answer**:  
 > *"In `apps/web/app/(dashboard)/scan/page.tsx`, we wrapped a client-side regex scanner in a `useMemo` hook that runs on every keystroke in the document composer. It calculates word count, detects URLs, and flags public free email domains (`@gmail.com`, `@yahoo.com`) as well as off-platform keywords (`Telegram`, `WhatsApp`, `cashier's check`) before the user even clicks submit. This provides instant feedback without incurring network latency."*
 
+### Q5: "How is HireShield AI deployed in production?"
+> **Answer**:  
+> *"HireShield AI is deployed across free/low-cost modern cloud platforms:
+> - **Frontend**: Next.js 15 hosted on **Vercel** ([https://hireshield-ai.vercel.app](https://hireshield-ai.vercel.app)) with automated CI/CD builds on every git push to `main`.
+> - **Backend Gateway**: Node.js / Express hosted on **Render** ([https://hireshield-api-gateway.onrender.com](https://hireshield-api-gateway.onrender.com)).
+> - **AI Microservice**: Python FastAPI hosted on **Render** ([https://hireshield-ai-service.onrender.com](https://hireshield-ai-service.onrender.com)).
+> - **Database**: Neon Serverless PostgreSQL with dual pooling (`DATABASE_URL` pooler on port 6543 for fast queries, and `DIRECT_URL` for migrations)."*
+
 ---
 
 ## 10. Live Demo Walkthrough Script
 
-Use this 60-second walkthrough when demoing the project to an interviewer:
+Use this 60-second walkthrough when demoing the project to an interviewer or evaluator (works locally on `http://localhost:3000` or live on [https://hireshield-ai.vercel.app](https://hireshield-ai.vercel.app)):
 
 1. **Step 1: The Login Bypass**
-   - Navigate to `http://localhost:3000/login`.
-   - Point out the editorial dossier card with the dot-grid canvas.
-   - Click **`One-Click Demo Bypass`** — showcase the Framer Motion press physics and instant offline entry into the platform.
+   - Navigate to `/login` (e.g. `https://hireshield-ai.vercel.app/login`).
+   - Point out the clean editorial dossier card with the dot-grid canvas.
+   - Click **`One-Click Demo Bypass`** — showcase instant offline entry into the platform without waiting for a database round-trip.
 2. **Step 2: The Command Center Overview**
    - Land on `/dashboard`.
-   - Point out the live top navigation bar with the **Cascade Health Popover** (`● All Systems Operational · 410ms avg`) and daily quota meter.
+   - Point out the top navigation bar with the **Cascade Health Popover** (`● All Systems Operational · 410ms avg`) and daily quota meter.
+
    - Demonstrate dynamic filtering: click between channel tabs (`Job Postings`, `Recruiter Emails`, `Offer PDFs`) and timeframes (`7D`, `30D`, `90D`) — notice the smooth quartic count-up transitions on the 4-column KPI strip.
    - Interact with the **Recharts Timeline**: toggle series pills (`Verified Safe`, `Suspicious`, `Confirmed Scam`) and hover to view the custom tooltip with dynamic Fraud Conversion Rate.
    - Hover over the **Fraud Vector Breakdown** multi-segment bar and category cards to reveal animated plain-English threat explanations.
